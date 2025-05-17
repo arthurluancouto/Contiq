@@ -13,7 +13,7 @@ export const supabase = createClient(supabaseUrl, supabaseKey, {
     autoRefreshToken: true,
     detectSessionInUrl: true,
     flowType: 'pkce',
-    emailRedirectTo: `${window.location.origin}/dashboard`
+    emailRedirectTo: `${window.location.origin}/auth/callback`
   }
 });
 
@@ -43,7 +43,7 @@ export const getAuthErrorMessage = (error: any): string => {
   }
   
   if (error.message?.includes('Email not confirmed')) {
-    return 'Please try signing in again. Email confirmation is not required.';
+    return 'Please check your email to confirm your account before signing in.';
   }
   
   if (error.message?.includes('User not found')) {
@@ -56,5 +56,5 @@ export const getAuthErrorMessage = (error: any): string => {
 
   // Log the error for debugging but return a user-friendly message
   console.error('Auth error:', error);
-  return 'An error occurred during sign in. Please try again.';
+  return 'An error occurred. Please try again.';
 };
