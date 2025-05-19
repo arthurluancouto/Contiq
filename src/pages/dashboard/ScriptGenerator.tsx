@@ -49,6 +49,8 @@ const ScriptGenerator = () => {
   const [exampleInputs, setExampleInputs] = useState<ExampleInput[]>([]);
   const [inputUrl, setInputUrl] = useState('');
   const [inputTitle, setInputTitle] = useState('');
+  const [generatedScript, setGeneratedScript] = useState('');
+  const [isGenerating, setIsGenerating] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const toneDropdownRef = useRef<HTMLDivElement>(null);
 
@@ -89,6 +91,44 @@ const ScriptGenerator = () => {
 
   const handleRemoveExample = (id: string) => {
     setExampleInputs(exampleInputs.filter(example => example.id !== id));
+  };
+
+  const handleGenerateScript = async () => {
+    if (!scriptTopic || !selectedPlatform || !selectedTone || !selectedContentStyle) {
+      return;
+    }
+
+    setIsGenerating(true);
+
+    try {
+      const payload = {
+        topic: scriptTopic,
+        platform: selectedPlatform,
+        videoLength,
+        tone: selectedTone,
+        contentStyle: selectedContentStyle,
+        references: exampleInputs
+      };
+
+      const response = await fetch('https://n8n-fc4c0o0swcokkww040kcswoc.erickto.dev/webhook-test/90937f5c-cdd2-4e0a-b41f-3d09cd9ff642', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to generate script');
+      }
+
+      const data = await response.text();
+      setGeneratedScript(data);
+    } catch (error) {
+      console.error('Error generating script:', error);
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
   return (
@@ -312,11 +352,23 @@ const ScriptGenerator = () => {
           </div>
 
           <button
-            onClick={() => {/* Handle generation */}}
-            className="w-full btn-primary py-4 flex items-center justify-center gap-2"
+            onClick={handleGenerateScript}
+            disabled={isGenerating || !scriptTopic || !selectedPlatform || !selectedTone || !selectedContentStyle}
+            className={`w-full btn-primary py-4 flex items-center justify-center gap-2 ${
+              (isGenerating || !scriptTopic || !selectedPlatform || !selectedTone || !selectedContentStyle) ? 'opacity-50 cursor-not-allowed' : ''
+            }`}
           >
-            <Sparkles size={20} />
-            Generate Script
+            {isGenerating ? (
+              <>
+                <RefreshCw size={20} className="animate-spin" />
+                Generating Script...
+              </>
+            ) : (
+              <>
+                <Sparkles size={20} />
+                Generate Script
+              </>
+            )}
           </button>
         </div>
 
@@ -329,13 +381,21 @@ const ScriptGenerator = () => {
             </h2>
           </div>
 
-          <div className="h-[500px] flex flex-col items-center justify-center text-center p-6 bg-lighter-gray/20 rounded-lg border border-white/10">
-            <Sparkles size={48} className="text-white/20 mb-4" />
-            <h3 className="text-xl font-semibold mb-2">No Script Generated Yet</h3>
-            <p className="text-white/60 max-w-md">
-              Fill in the script topic, select platform and duration, choose your tone and content style to generate an engaging script.
-            </p>
-          </div>
+          {generatedScript ? (
+            <textarea
+              value={generatedScript}
+              onChange={(e) => setGeneratedScript(e.target.value)}
+              className="w-full h-[500px] bg-lighter-gray/20 border border-white/10 rounded-lg p-4 focus:outline-none focus:ring-1 focus:ring-neon-red/50 text-white resize-none font-mono"
+            />
+          ) : (
+            <div className="h-[500px] flex flex-col items-center justify-center text-center p-6 bg-lighter-gray/20 rounded-lg border border-white/10">
+              <Sparkles size={48} className="text-white/20 mb-4" />
+              <h3 className="text-xl font-semibold mb-2">No Script Generated Yet</h3>
+              <p className="text-white/60 max-w-md">
+                Fill in the script topic, select platform and duration, choose your tone and content style to generate an engaging script.
+              </p>
+            </div>
+          )}
         </div>
       </div>
     </div>
